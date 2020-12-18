@@ -6,7 +6,7 @@ gRPC skeleton using golang.
 - open your terminal and clone grpc-skeleton: git clone git@bitbucket.org:waresix/grpc-skeleton.git
 - git fetch origin
 - git remote set-url origin git@bitbucket.org:waresix/cities.git
-- git mod init waresix.com/cities
+- go mod init waresix.com/cities
 - find replace waresix.com/grpc-skeleton with waresix.com/cities
 - cp .env.example .env 
 - add sql script to internal/schema/migrate.go
@@ -34,7 +34,7 @@ gRPC skeleton using golang.
 ## Example proto/cities.proto
 ```
 syntax = "proto3";
-option go_package="waresix.com/grpc-skeleton/city";
+option go_package="waresix.com/cities";
 
 message EmptyInput {}
 
@@ -73,8 +73,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"waresix.com/grpc-skeleton/internal/model"
-	"waresix.com/grpc-skeleton/internal/pkg/db/redis"
+	"waresix.com/cities/internal/model"
+	"waresix.com/cities/internal/pkg/db/redis"
 )
 
 // CityServer struct for price agreement
@@ -201,7 +201,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"grpc-client/waresix.com/cities/oncall"
+	"grpc-client/waresix.com/cities"
 )
 
 func main() {
