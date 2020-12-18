@@ -1,45 +1,237 @@
-**Edit a file, create a new file, and clone from Bitbucket in under 2 minutes**
+# Golang gRPC Skeleton
+gRPC skeleton using golang.
 
-When you're done, you can delete the content in this README and update the file with details for others getting started with your repository.
+## How to Use
+- create your repository,  ex : git@bitbucket.org:waresix/cities.git 
+- open your terminal and clone grpc-skeleton: git clone git@bitbucket.org:waresix/grpc-skeleton.git
+- git fetch origin
+- git remote set-url origin git@bitbucket.org:waresix/cities.git
+- git mod init waresix.com/cities
+- find replace waresix.com/grpc-skeleton with waresix.com/cities
+- cp .env.example .env 
+- add sql script to internal/schema/migrate.go
+- create file proto/cities.proto
+- run protoc --go_out=plugins=grpc:. proto/cities.proto
+- create file internal/service/cities.go
+- create file internal/model/city.go
+- add grpc route at internal/route/route.go
+- test the grpc service with make a grpc client at client.go
 
-*We recommend that you open this README in another tab as you perform the tasks below. You can [watch our video](https://youtu.be/0ocf7u76WSo) for a full demo of all the steps in this tutorial. Open the video in a new tab to avoid leaving Bitbucket.*
+## Example Schema Migrate
+```
+{
+	Version:     1,
+	Description: "Create cities Table",
+	Script: `
+		CREATE TABLE cities (
+			id serial PRIMARY KEY,
+			name varchar NOT NULL
+		);
+	`,
+},
+```
 
----
+## Example proto/cities.proto
+```
+syntax = "proto3";
+option go_package="waresix.com/grpc-skeleton/city";
 
-## Edit a file
+message EmptyInput {}
 
-You’ll start by editing this README file to learn how to edit a file in Bitbucket.
+message GetCityInput {
+  int32 id = 1;
+}
 
-1. Click **Source** on the left side.
-2. Click the README.md link from the list of files.
-3. Click the **Edit** button.
-4. Delete the following text: *Delete this line to make a change to the README from Bitbucket.*
-5. After making your change, click **Commit** and then **Commit** again in the dialog. The commit page will open and you’ll see the change you just made.
-6. Go back to the **Source** page.
+message NewCityInput {
+  string name = 1;
+}
 
----
+message Cities {
+  repeated City cities = 1;
+}
 
-## Create a file
+message City {
+  int32 id = 1;
+  string name = 2;
+}
 
-Next, you’ll add a new file to this repository.
+service CitiesService {
+ rpc GetCity(GetCityInput) returns (City) {}
+ rpc GetCities(EmptyInput) returns (Cities) {}
+ rpc CreateCity(NewCityInput) returns (City) {}
+}
 
-1. Click the **New file** button at the top of the **Source** page.
-2. Give the file a filename of **contributors.txt**.
-3. Enter your name in the empty file space.
-4. Click **Commit** and then **Commit** again in the dialog.
-5. Go back to the **Source** page.
+```
 
-Before you move on, go ahead and explore the repository. You've already seen the **Source** page, but check out the **Commits**, **Branches**, and **Settings** pages.
+## Example internal/service/cities.go
+```
+package service
 
----
+import (
+	context "context"
+	"database/sql"
 
-## Clone a repository
+	"github.com/sirupsen/logrus"
 
-Use these steps to clone from SourceTree, our client for using the repository command-line free. Cloning allows you to work on your files locally. If you don't yet have SourceTree, [download and install first](https://www.sourcetreeapp.com/). If you prefer to clone from the command line, see [Clone a repository](https://confluence.atlassian.com/x/4whODQ).
+	"waresix.com/grpc-skeleton/internal/model"
+	"waresix.com/grpc-skeleton/internal/pkg/db/redis"
+)
 
-1. You’ll see the clone button under the **Source** heading. Click that button.
-2. Now click **Check out in SourceTree**. You may need to create a SourceTree account or log in.
-3. When you see the **Clone New** dialog in SourceTree, update the destination path and name if you’d like to and then click **Clone**.
-4. Open the directory you just created to see your repository’s files.
+// CityServer struct for price agreement
+type CityServer struct {
+	Db    *sql.DB
+	Log   *logrus.Entry
+	Cache *redis.Cache
+}
 
-Now that you're more familiar with your Bitbucket repository, go ahead and add a new file locally. You can [push your change back to Bitbucket with SourceTree](https://confluence.atlassian.com/x/iqyBMg), or you can [add, commit,](https://confluence.atlassian.com/x/8QhODQ) and [push from the command line](https://confluence.atlassian.com/x/NQ0zDQ).
+// GetCity function
+func (s *CityServer) GetCity(ctx context.Context, in *city.GetCityInput) (*city.City, error) {
+	var cityModel model.City
+	cityModel.ID = in.Id
+	err := cityModel.Get(ctx, s.Db)
+	if err != nil {
+		return &city.City{}, err
+	}
+
+	return &city.City{Id: cityModel.ID, Name: cityModel.Name}, nil
+}
+
+// GetCities function
+func (s *CityServer) GetCities(ctx context.Context, in *city.EmptyInput) (*city.Cities, error) {
+	var list city.Cities
+	var cityModel model.City
+	cities, err := cityModel.List(ctx, s.Db)
+
+	if err != nil {
+		return &list, err
+	}
+
+	for _, city := range cities {
+		list = append(list, city.City{Id: city.ID, Name: city.Name})
+	}
+
+	return &list, nil
+}
+
+// CreateCity func
+func (s *CityServer) CreateCity(ctx context.Context, in *city.NewCityInput) (*city.City, error) {
+
+	var cityModel model.City
+	err := cityModel.Create(ctx, s.Db, in)
+
+	if err != nil {
+		return &city.City{}, err
+	}
+
+	return &city.City{Id: cityModel.ID, Name: cityModel.Name}, nil
+}
+
+```
+
+## Example internal/model/city.go
+```
+package model
+
+import (
+	"context"
+	"database/sql"
+)
+
+// City struct
+type City struct {
+	ID   int32
+	Name string
+}
+
+// List of City
+func (u *City) List(ctx context.Context, db *sql.DB) ([]City, error) {
+	var list []City
+	var err error
+	query := `SELECT id, name FROM cities`
+	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return list, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var city City
+		err = rows.Scan(&city.ID, &city.Name)
+		if err != nil {
+			return list, err
+		}
+
+		list = append(list, city)
+	}
+
+	return list, rows.Err()
+}
+
+// Get City
+func (u *City) Get(ctx context.Context, db *sql.DB) error {
+	return db.QueryRowContext(ctx, `SELECT id, name FROM cities WHERE id = $1`, u.ID).Scan(&u.ID, &u.Name)
+}
+
+// Create New City
+func (u *City) Create(ctx context.Context, db *sql.DB, in *city.NewCityInput) error {
+
+	_, err = tx.ExecContext(ctx, `INSERT INTO cities (name) VALUES ($1)`, in.Name)
+
+	return err
+}
+
+```
+
+## Example gRPC Routing
+add this code at func GrpcRoute() in internal/route/route.go 
+```
+oncallServer := service.OnCallServer{Db: db, Log: log, Cache: cache}
+oncall.RegisterOnCallPriceAgreementServiceServer(grpcServer, &oncallServer)
+```
+
+## Example test as grpc Client
+create file client.go
+```
+package main
+
+import (
+	"log"
+
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+
+	"grpc-client/waresix.com/cities/oncall"
+)
+
+func main() {
+
+	var conn *grpc.ClientConn
+	conn, err := grpc.Dial(":9001", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %s", err)
+	}
+	defer conn.Close()
+
+	c := cities.NewCitiesServiceClient(conn)
+
+	response, err := c.CreateCity(context.Background(), &cities.NewCityInput{Name: "jakarta"})
+	if err != nil {
+		log.Fatalf("Error when calling CreateCity: %s", err)
+	}
+	log.Printf("Response from server: %v", response)
+
+	response2, err := c.GetCity(context.Background(), &cities.GetCityInput{})
+	if err != nil {
+		log.Fatalf("Error when calling GetCity: %s", err)
+	}
+	log.Printf("Response from server: %v", response2)
+
+  response3, err := c.GetCities(context.Background(), &cities.EmptyInput{})
+	if err != nil {
+		log.Fatalf("Error when calling GetCity: %s", err)
+	}
+	log.Printf("Response from server: %v", response3)
+}
+
+```
