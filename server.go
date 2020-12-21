@@ -9,11 +9,11 @@ import (
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 
-	"waresix.com/grpc-skeleton/internal/config"
-	"waresix.com/grpc-skeleton/internal/pkg/db/postgres"
-	"waresix.com/grpc-skeleton/internal/pkg/db/redis"
-	"waresix.com/grpc-skeleton/internal/pkg/log/logruslog"
-	"waresix.com/grpc-skeleton/internal/route"
+	"waresix.com/cities/internal/config"
+	"waresix.com/cities/internal/pkg/db/postgres"
+	"waresix.com/cities/internal/pkg/db/redis"
+	"waresix.com/cities/internal/pkg/log/logruslog"
+	"waresix.com/cities/internal/route"
 )
 
 const defaultPort = "9001"

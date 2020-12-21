@@ -1,0 +1,27 @@
+syntax = "proto3";
+option go_package="waresix.com/cities";
+
+message EmptyInput {}
+
+message GetCityInput {
+  int32 id = 1;
+}
+
+message NewCityInput {
+  string name = 1;
+}
+
+message Cities {
+  repeated City cities = 1;
+}
+
+message City {
+  int32 id = 1;
+  string name = 2;
+}
+
+service CitiesService {
+ rpc GetCity(GetCityInput) returns (City) {}
+ rpc GetCities(EmptyInput) returns (Cities) {}
+ rpc CreateCity(NewCityInput) returns (City) {}
+}

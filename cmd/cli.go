@@ -8,10 +8,10 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 
-	"waresix.com/grpc-skeleton/internal/config"
-	"waresix.com/grpc-skeleton/internal/pkg/db/postgres"
-	"waresix.com/grpc-skeleton/internal/pkg/log/logruslog"
-	"waresix.com/grpc-skeleton/internal/schema"
+	"waresix.com/cities/internal/config"
+	"waresix.com/cities/internal/pkg/db/postgres"
+	"waresix.com/cities/internal/pkg/log/logruslog"
+	"waresix.com/cities/internal/schema"
 )
 
 func main() {
