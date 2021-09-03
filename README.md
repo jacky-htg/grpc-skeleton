@@ -2,8 +2,8 @@
 gRPC skeleton using golang.
 
 ## How to Use
-- create your repository,  ex : git@bitbucket.org:waresix/cities.git 
-- open your terminal and clone grpc-skeleton: git clone git@bitbucket.org:waresix/grpc-skeleton.git
+- create your repository,  ex : git@github.com:jacky-htg/grpc-skeleton.git 
+- open your terminal and clone grpc-skeleton: git clone git@github.com:jacky-htg/grpc-skeleton.git
 - git fetch origin
 - git remote set-url origin git@bitbucket.org:waresix/cities.git
 - go mod init waresix.com/cities
